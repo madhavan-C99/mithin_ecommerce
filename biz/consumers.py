@@ -2,7 +2,7 @@
 import json
 import logging
 from channels.generic.websocket import AsyncWebsocketConsumer
-from .tasks.tasks import get_filtered_products_task,fetch_user_active_orders_task
+from .tasks.tasks import *
 
 logger = logging.getLogger('django')
 

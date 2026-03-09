@@ -15,7 +15,7 @@ from django.conf import settings
 logger=logging.getLogger("task")
 
 @task()
-def get_filtered_products_task(cat_id, sub_cat_id):
+def get_filtered_products_task(cat_id, sub_cat_id=None):
     close_old_connections()
     queryset = Product.objects.filter(product_img__isnull=False).exclude(product_img='')
     

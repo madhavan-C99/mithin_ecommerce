@@ -6,7 +6,6 @@ from ..services.cart_services import *
 from adm.services.user_service import *
 
 
-
 @authentication_classes([])
 @permission_classes([])
 class AddtoCart(APIView):
