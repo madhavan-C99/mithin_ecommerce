@@ -1,0 +1,178 @@
+from ..models.cart import *
+from ..models.cart_items import *
+from rest_framework.exceptions import APIException
+from django.db import transaction
+from decimal import Decimal
+from django.conf import settings
+import requests
+
+
+def add_to_cart(**data):
+    try:
+        user_id = data.get('user_id')
+        product_id = data.get('product_id')
+        qty = int(data.get('quantity', 1))
+
+        product = Product.objects.get(id=product_id)
+        
+        if product.stock <= 0:
+            return "Sorry, Product is Out of Stock."
+        
+        if product.stock < qty:
+            return f"Only {product.stock} items left in stock."
+
+        cart_data, created = Cart.objects.get_or_create(
+            user_id=user_id, 
+            is_ordered=False, 
+            defaults={'total_price': 0}
+        )
+
+        # Item already irukka nu check panroam
+        existing_item = CartItems.objects.filter(cart=cart_data, product_id=product_id).exists()
+
+        if existing_item:
+            return "Item already in cart."
+        
+        
+        # Pudusa create panroam
+        CartItems.objects.create(
+            cart=cart_data,
+            product_id=product_id,
+            unit_price=data.get('unit_price'),
+            quantity=qty,
+            weight=data.get('weight'),
+            total_price=data.get('total_price')
+        )
+
+        # Cart grand total update
+        all_items = CartItems.objects.filter(cart=cart_data)
+        cart_data.total_price = sum(item.total_price for item in all_items)
+        cart_data.save()
+
+        return "Item Added to Cart Successfully."
+    except Exception as e:
+        raise APIException(str(e))
+    
+
+def fetch_cart_items(data):
+    try:
+        products=Cart.objects.filter(user_id=data.get('user_id'), is_ordered=False).first()
+
+        if not products:
+            return "No Products on your Cart"
+        
+        cart_items=products.items.all()
+        item_list=[]
+        for item in cart_items:
+            item_list.append({
+                "cart_item_id": item.id,
+                "product_id": item.product.id,
+                "product_name": item.product.name,
+                "image": (f'{settings.SITE_URL}{settings.MEDIA_URL}{item.product.product_img}') if item.product.product_img else None,
+                "weight": item.weight,
+                "quantity": item.quantity,
+                "unit_price": item.unit_price,
+                "total_price": item.total_price # Individul item total
+            })
+
+        return {
+            "cart_id": products.id,
+            "grand_total": products.total_price,
+            "items": item_list
+        }
+    except Exception as e:
+        raise APIException(e)
+    
+from decimal import Decimal
+
+def update_cart_item(**data):
+    try:
+        user_id = data.get('user_id')
+        product_id = data.get('product_id')
+        action = data.get('action')
+
+        with transaction.atomic():
+            cart = Cart.objects.filter(user_id=user_id, is_ordered=False).first()
+            if not cart: 
+                return "Cart not found"
+
+            cart_item = CartItems.objects.filter(cart=cart, product_id=product_id).first()
+            if not cart_item: 
+                return "Product not found"
+
+            base_weight = Decimal(str(cart_item.product.weight)) 
+            price_per_kg = Decimal(str(cart_item.product.price))
+
+            if action == 'increase':
+                cart_item.quantity += 1
+            elif action == 'decrease':
+                if cart_item.quantity > 1:
+                    cart_item.quantity -= 1
+                else:
+                    cart_item.delete()
+                    return update_cart_totals(cart)
+
+            cart_item.weight = base_weight * cart_item.quantity
+            cart_item.total_price = cart_item.weight * price_per_kg
+            cart_item.unit_price=price_per_kg
+            cart_item.save()
+
+            return update_cart_totals(cart)
+
+    except Exception as e:
+        raise APIException(str(e))
+
+def update_cart_totals(cart):
+    all_items = cart.items.all() 
+    if all_items.exists():
+        cart.total_price = sum(item.total_price for item in all_items)
+        cart.save()
+        return "Cart updated"
+    else:
+        cart.delete()
+        return "Cart empty"
+
+def delete_cart_item(**data):
+    try:
+        item_id = data.get('cart_item_id')
+        user_id=data.get('user_id')
+        
+        cart_item = CartItems.objects.filter(id=item_id, cart__user=user_id).first()
+        
+        if not cart_item:
+            return "Item not found in your cart"
+        
+        cart = cart_item.cart
+        cart_item.delete()
+
+        remaining_items = CartItems.objects.filter(cart=cart)
+        
+        if remaining_items.exists():
+            cart.total_price = sum(item.total_price for item in remaining_items)
+            cart.save()
+            return "Item deleted and cart updated"
+        else:
+            cart.delete()
+            return "Item deleted and cart removed"
+
+    except Exception as e:
+        raise APIException(str(e))
+
+
+def clear_user_cart(**data):
+    try:
+        user_id = data.get('user_id')
+        
+        cart = Cart.objects.filter(user_id=user_id, is_ordered=False).first()
+        
+        if not cart:
+            return "No active cart found"
+        
+        cart.items.all().delete()
+        cart.delete()
+        
+        return "Cart and all items cleared successfully"
+        
+    except Exception as e:
+        raise APIException(str(e))
+    
