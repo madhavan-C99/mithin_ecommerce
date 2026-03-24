@@ -1,8 +1,10 @@
 from django.db import models
 from adm.models.user import User
 from adm.models.products import Product
+from adm.models.delete_base_model import SafeDeleteModel
 
-class Feedback(models.Model):
+
+class Feedback(SafeDeleteModel):
     user=models.ForeignKey(User, on_delete=models.CASCADE)
     product=models.ForeignKey(Product, on_delete=models.CASCADE)
     comment=models.TextField()

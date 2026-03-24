@@ -1,8 +1,9 @@
 from django.db import models
 from .cart import Cart
 from adm.models.products import Product
+from adm.models.delete_base_model import SafeDeleteModel
 
-class CartItems(models.Model):
+class CartItems(SafeDeleteModel):
     cart = models.ForeignKey(Cart, on_delete=models.CASCADE, related_name="items")
     product = models.ForeignKey(Product, on_delete=models.CASCADE)
     weight=models.FloatField()

@@ -819,6 +819,17 @@ if os.name == 'nt':
 BASE_DIR = Path(__file__).resolve().parent.parent
 
 
+# React + Postman-la cookie work aaga idhu romba mukkiyam
+SESSION_ENGINE = 'django.contrib.sessions.backends.db' # Database-la store panna
+SESSION_COOKIE_HTTPONLY = True  # Security-kaaga (JS access panna mudiyaathu)
+SESSION_SAVE_EVERY_REQUEST = True # Prathi request-layum session-ah update panna
+
+# Cross-Domain (CORS) settings (React vera port-la irundha)
+CORS_ALLOW_CREDENTIALS = True 
+SESSION_COOKIE_SAMESITE = 'Lax' # Development-ku 'Lax' okay
+
+
+
 # Quick-start development settings - unsuitable for production
 # See https://docs.djangoproject.com/en/5.1/howto/deployment/checklist/
 
@@ -1123,6 +1134,9 @@ CHANNEL_LAYERS = {
     },
 }
 
+
+# For Google Maps.
+GOOGLE_MAPS_API_KEY ="AIzaSyBi4EjhV-2YkjiOdlY42ZLBIvqBgipuQ08"
 
 
 

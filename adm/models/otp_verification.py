@@ -1,7 +1,9 @@
 from django.db import models
+from .delete_base_model import SafeDeleteModel
 
 
-class OTPVerification(models.Model):
+
+class OTPVerification(SafeDeleteModel):
     mobile_number=models.CharField(max_length=15)
     email=models.EmailField(db_index=True,null=True,blank=True)
     otp_hash=models.CharField(max_length=250)

@@ -12,7 +12,7 @@ def add_address(**data):
         address_exists=Address.objects.filter(user=customer).exists()
         default= not address_exists
         new_address=Address.objects.create(user=customer,name=data.get('name'),mobile=data.get('mobile'),category=data.get('category'),address_line1=data.get('address_line1'),
-                                           address_line2=data.get('address_line2'),city=data.get('city'),state=data.get('state'),
+                                           address_line2=data.get('address_line2'),landmark=data.get('landmark'),city=data.get('city'),state=data.get('state'),
                                            country=data.get('country'),pincode=data.get('pincode'),is_default=default)
         return f"New Address Added for this user {user}"
     except Exception as e:
@@ -20,7 +20,9 @@ def add_address(**data):
     
 def fetch_all_address(data):
     try:
-        address=Address.objects.filter(user_id=data.get('user_id'))
+        user=CustomerProfile.objects.filter(user_id=data.get('user_id')).first()
+
+        address=Address.objects.filter(user=user)
 
         final_data=[]
 
@@ -32,10 +34,12 @@ def fetch_all_address(data):
                 "category":item.category,
                 "address_line1":item.address_line1,
                 "address_line2":item.address_line2,
+                "landmark":item.landmark,
                 "city":item.city,
                 "state":item.state,
                 "country":item.country,
-                "pincode":item.pincode
+                "pincode":item.pincode,
+                "is_default":item.is_default
             }
             final_data.append(a)
         return final_data
@@ -63,6 +67,9 @@ def update_address(**data):
         if 'address_line2' in data:
             address.address_line2=data.get('address_line2')
             updated=True
+        if 'landmark' in data:
+            address.landmark=data.get('landmark')
+            updated=True
         if 'state' in data:
             address.state=data.get('state')
             updated=True
@@ -89,13 +96,14 @@ def delete_address(**data):
     try:
         address_to_delete = Address.objects.filter(id=data.get('address_id')).first()
 
-        user = data.get('user_id')
+        user_id = data.get('user_id')
+        user=CustomerProfile.objects.filter(user_id=user_id).first()
         was_default = address_to_delete.is_default
 
-        address_to_delete.delete()
+        address_to_delete.save_delete(user_id=user_id)
 
         if was_default:
-            remaining_address = Address.objects.filter(user_id=user).first()
+            remaining_address = Address.objects.filter(user=user).first()
             
             if remaining_address:
                 remaining_address.is_default = True
@@ -110,32 +118,13 @@ def delete_address(**data):
         raise APIException(e)
     
 
-    
-def fetch_one_address(data):
-    try:
-        address=Address.objects.filter(id=data.get('address_id')).first()
-        return {
-                "id":address.id,
-                "name":address.name,
-                "mobile":address.mobile,
-                "category":address.category,
-                "address_line1":address.address_line1,
-                "address_line2":address.address_line2,
-                "city":address.city,
-                "state":address.state,
-                "country":address.country,
-                "pincode":address.pincode
-            }
-    except Exception as e:
-        raise APIException(e)
-    
-
 def default_address(**data):
     try:
         address_id=data.get('address_id')
         address=Address.objects.filter(id=address_id).first()
-        old_address=Address.objects.filter(user_id=data.get('user_id'),is_default=True).update(is_default=False)
-        address.is_default="True"
+        # user=CustomerProfile.objects.filter(user_id=data.get('user_id')).first()
+        old_address=Address.objects.filter(user=address.user,is_default=True).update(is_default=False)
+        address.is_default=True
         address.save()
         return f"This address id:{address_id} set to defualt successfully."
     except Exception as e:
@@ -144,7 +133,8 @@ def default_address(**data):
 def fetch_default_address(data):
     try:
         user_id=data.get('user_id')
-        address=Address.objects.filter(user_id=user_id,is_default=True).first()
+        user=CustomerProfile.objects.filter(user_id=user_id).first()
+        address=Address.objects.filter(user=user,is_default=True).first()
         result={
                 "id":address.id,
                 "name":address.name,
@@ -152,6 +142,7 @@ def fetch_default_address(data):
                 "category":address.category,
                 "address_line1":address.address_line1,
                 "address_line2":address.address_line2,
+                "landmark":address.landmark,
                 "city":address.city,
                 "state":address.state,
                 "country":address.country,

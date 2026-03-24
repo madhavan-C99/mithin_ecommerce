@@ -1,9 +1,11 @@
 from django.db import models
-from adm.models.user import User
+from adm.models import CustomerProfile
 from .address import Address
+from adm.models.delete_base_model import SafeDeleteModel
 
-class Order(models.Model):
-    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name="orders")
+
+class Order(SafeDeleteModel):
+    user = models.ForeignKey(CustomerProfile, on_delete=models.CASCADE, related_name="orders")
     total_amount = models.FloatField()
     order_number=models.CharField(max_length=20 )
     status = models.CharField(max_length=50, default='Pending') # Pending, Shipped, Delivered, Cancelled

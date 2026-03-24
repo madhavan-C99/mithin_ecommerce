@@ -1,7 +1,8 @@
 from django.db import models
 from .user import User
+from .delete_base_model import SafeDeleteModel
 
-class AdminProfile(models.Model):
+class AdminProfile(SafeDeleteModel):
     user=models.ForeignKey(User, on_delete=models.CASCADE)
     name=models.CharField(max_length=100)
     email=models.EmailField(db_index=True,unique=True)

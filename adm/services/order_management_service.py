@@ -4,6 +4,7 @@ from rest_framework.exceptions import APIException
 from ..services.collection_query_service import *
 from ..tasks.trendtask import *
 from datetime import datetime, timedelta
+from biz.tasks.tasks import order_update_task
 
 
 
@@ -54,7 +55,9 @@ def order_top_tile(**data):
 def fetch_one_order(**data):
     try:
         cus=exec_raw_sql('D_FETCH_ORDER_CUSTOMER_DETAILS',{"order_no":data.get('order_number'),"id":data.get('id')})
-        cus_detail=cus[0]
+        if not cus:
+            raise APIException("Order not found")
+        cus_detail=cus[0] if cus else None
         product=exec_raw_sql('D_FETCH_ORDER_PRODUCT_DETAILS',{"order_no":data.get('order_number'),"id":data.get('id')})
     
         
@@ -64,6 +67,7 @@ def fetch_one_order(**data):
                 "order_id":cus_detail['order_id'],
                 "order_number":cus_detail['order_number'],
                 "status":cus_detail['status'],
+                "payment_status":cus_detail['payment_status'],
                 "order_date_time":cus_detail['created_at'],
                 "update_date_time":cus_detail['updated_at']
                 },
@@ -88,7 +92,7 @@ def fetch_one_order(**data):
         raise APIException(e)
     
     
-def order_status_update(**data):
+def order_status_update(user,**data):
     try:
         order=Order.objects.filter(id=data.get('id')).first()        
         order.status=data.get('order_status')
@@ -96,7 +100,20 @@ def order_status_update(**data):
         order.save()
         fetch_all_order_data_task()
         fetch_order_top_tile_task()
-        new_order_assign_admin()
+        order_update_task(order.id)
         return (f"order {order.id} by status is updated")
+    except Exception as e:
+        raise APIException(e)
+
+
+def read_notification(user,**data):
+    try:
+        notify=Notification.objects.filter(id=data.get('id')).first()
+        notify.is_read=True
+        notify.updated_at=datetime.now()
+        notify.updated_by=user.name
+        notify.save()
+        
+        return(f"{notify.message} read by admin")
     except Exception as e:
         raise APIException(e)

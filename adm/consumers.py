@@ -79,7 +79,6 @@ class TrendingProducts(AsyncWebsocketConsumer):
                 "trending_id":p["trending_id"],
                 "name":p["name"],
                 "tamil_name":p["tamil_name"],
-                "product_image":p["product_image"],
                 "product_img":(
                     f"{settings.SITE_URL}{settings.MEDIA_URL}{p['product_img']}" if p["product_img"] else None
                     ),
@@ -88,6 +87,7 @@ class TrendingProducts(AsyncWebsocketConsumer):
                 "unit":p["unit"],
                 "stock":p["stock"],
                 "subcategory_name":p["subcategory_name"],
+		"category_name":p["category_name"],
                 "stock_status":p['stock_status']
                 
                 
@@ -144,7 +144,6 @@ class FetchAllProducts(AsyncWebsocketConsumer):
                 "name":p["name"],
                 "tamil_name":p["tamil_name"],
                 "description":p["description"],
-                "product_image":p["product_image"],
                 "product_img":(
                     f"{settings.SITE_URL}{settings.MEDIA_URL}{p['product_img']}" if p["product_img"] else None
                     ),
@@ -155,6 +154,7 @@ class FetchAllProducts(AsyncWebsocketConsumer):
                 "stock":p["stock"],
                 "status":p["status"],
                 "subcategory":p["subname"],
+		"category_name":p["category_name"],
                 "current_trending_status":p["current_trending_status"]
                 
                 
@@ -164,66 +164,29 @@ class FetchAllProducts(AsyncWebsocketConsumer):
 
     
     
-class NewOrderData(AsyncWebsocketConsumer):
+class NotificationData(AsyncWebsocketConsumer):
     async def connect(self):
-        self.group_name = "new_order_send_group"
+        self.group_name = "notification_group"
         await self.channel_layer.group_add(self.group_name, self.channel_name)
         await self.accept()
-
-    async def disconnect(self, close_code):
-        await self.channel_layer.group_discard(self.group_name, self.channel_name)
-
-
-
+    
     async def receive(self, text_data):
         data = json.loads(text_data)
 
-        if data.get("action") == "new_order":
-            fetch_order = await self.new_order_data()
+        if data.get("action") == "notification_all":
+            fetch_stock = await self.stock_data()
 
             await self.send(text_data=json.dumps({
-                "payload": fetch_order 
+                "payload": fetch_stock
             }))
-            
-            
-    async def send_new_order_data(self, event):
-        order_list = event['data']
-        await self.send(text_data=json.dumps({
-            'payload': order_list
-        }))
-        
-    async def total_order_update(self,event):
-        total_order=event['data']
-        await self.send(text_data=json.dumps({
-            'payload': total_order
-        }))
-        
-        
-    @sync_to_async
-    def new_order_data(self):
-        order_data=exec_raw_sql('D_FETCH_NEW_ORDER_DATA',{})
-        # print(category_chart)
-        return order_data
-    
-    
-    
-    
-        
-class StockAlertData(AsyncWebsocketConsumer):
-    async def connect(self):
-        self.group_name = "stock_alter_product_group"
-        await self.channel_layer.group_add(self.group_name, self.channel_name)
-        await self.accept()
-
     async def disconnect(self, close_code):
         await self.channel_layer.group_discard(self.group_name, self.channel_name)
 
-    async def send_stock_alert_data(self, event):
-        stock_data = event['data']
+    async def notification_send_data(self, event):
+        notification_data = event['data']
         await self.send(text_data=json.dumps({
-            'payload': stock_data
-        }))
-        
+            'payload': notification_data
+        }))    
         
 class StockCategoryChart(AsyncWebsocketConsumer):
     async def connect(self):

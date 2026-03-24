@@ -20,7 +20,7 @@ def fetch_product_details(data):
             "image": (f'{settings.SITE_URL}{settings.MEDIA_URL}{product.product_img}') if product.product_img else None
         }
 
-        print(product_data)
+        # print(product_data)
         
         return product_data
 

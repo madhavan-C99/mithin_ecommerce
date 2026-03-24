@@ -1,8 +1,10 @@
 from django.db import models
 from .perm import Perm
+from .delete_base_model import SafeDeleteModel
 
 
-class Role(models.Model): 
+
+class Role(SafeDeleteModel): 
     name = models.CharField(max_length=50)
     display_value = models.CharField(max_length=100)
     description = models.TextField(null=True, blank=True)

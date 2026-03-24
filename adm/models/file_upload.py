@@ -1,7 +1,8 @@
 from django.db import models
+from .delete_base_model import SafeDeleteModel
 
 
-class FileUpload(models.Model):
+class FileUpload(SafeDeleteModel):
     tmp_file_name = models.CharField(max_length=150)
     orig_file_name = models.CharField(max_length=100)
     storage_file_name = models.CharField(max_length=150, null=True)

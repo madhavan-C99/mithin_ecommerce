@@ -1,8 +1,10 @@
 from django.db import models
 from adm.models.products import Product
 from .order import Order
+from adm.models.delete_base_model import SafeDeleteModel
 
-class OrderItems(models.Model):
+
+class OrderItems(SafeDeleteModel):
     order = models.ForeignKey(Order, on_delete=models.CASCADE, related_name="items")
     product = models.ForeignKey(Product, on_delete=models.CASCADE)
     weight=models.CharField(max_length=50)

@@ -19,6 +19,7 @@ urlpatterns = [
     path('create_role',CreateRole.as_view()),
     path('create_perm',CreatePerm.as_view()),
     path('fetch_all_customer_data',FetchAllCustomerData.as_view()), # for fetch all customers to admin
+    path('fetch_all_users',FetchallUsers.as_view()), # Fetch all customers and admins
     path('admin_email_verification',EmailVerification.as_view()), # for login authentication for admin users
     path('upload_file',UploadFile.as_view()),
     path('get_file',GetFile.as_view()),
@@ -65,7 +66,9 @@ urlpatterns = [
 
     path('order_top_tile',OrderTopTile.as_view()),
     path('fetch_one_order',FetchOneOrderDetails.as_view()),
-    path('order_status_update',OrderStatusUpdate.as_view())
+    path('order_status_update',OrderStatusUpdate.as_view()),
+
+    path('read_notification',ReadNotification.as_view())
 
 
 

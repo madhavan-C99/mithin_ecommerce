@@ -53,7 +53,7 @@ def validate_email(**data):
         if not email and not password:
             raise APIException("Email and Password Required")
         
-        adm_user=AdminProfile.objects.filter(email=email).select_related('user').first()
+        adm_user=AdminProfile.objects.filter(email=email,is_active=True).select_related('user').first()
 
         if adm_user:
             main_user=adm_user.user

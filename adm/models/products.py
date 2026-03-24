@@ -1,14 +1,25 @@
 from django.db import models
 from .category import *
+import uuid
+from .delete_base_model import SafeDeleteModel
 
 
-class Product(models.Model):
+def product_image_path(instance, filename):
+    ext = filename.split('.')[-1]
+    return f"product_snap/{uuid.uuid4()}.{ext}"
+
+
+class Product(SafeDeleteModel):
     name=models.CharField()
     tamil_name=models.CharField(blank=True)
-    product_image=models.CharField(max_length=500, null=True)
-    product_img=models.ImageField(upload_to="product_snap", null=True)
+    product_img = models.ImageField(
+    upload_to=product_image_path,
+    null=True,
+    blank=True
+            )
     description=models.TextField(max_length=200)
-    subcategory=models.ForeignKey(SubCategory,on_delete=models.CASCADE,related_name='product')
+    subcategory=models.ForeignKey(SubCategory,on_delete=models.CASCADE,related_name='product',null=True)
+    category=models.ForeignKey(Category,on_delete=models.CASCADE,null=True)
     is_active=models.BooleanField(default=True)
     weight=models.FloatField(default=1000,null=True)
     unit=models.CharField(null=True)
@@ -27,7 +38,7 @@ class Product(models.Model):
     class Meta:
         db_table="adm_products"
 
-class TrendingProduct(models.Model):
+class TrendingProduct(SafeDeleteModel):
     product=models.ForeignKey(Product,on_delete=models.CASCADE,null=True, blank=True)
     subcategory=models.ForeignKey(SubCategory,on_delete=models.CASCADE,null=True, blank=True)
     current_trending_status=models.BooleanField(default=True)

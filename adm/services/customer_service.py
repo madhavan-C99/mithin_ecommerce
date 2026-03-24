@@ -167,17 +167,38 @@ def update_customer_data(**data):
 
 def change_customer_status(data):
     try:
-        customer=CustomerProfile.objects.filter(id=data.get('user_id')).first()
+        user_id = data.get('user_id')
+        role_name = data.get('role')
+        new_status = data.get('status')
 
-        if customer:    
-            user=customer.user
-            user.is_active = not user.is_active
+        if role_name == 'customer':
+            profile = CustomerProfile.objects.filter(id=user_id).first()
+            if not profile:
+                return {"error": "Customer not found."}
+            
+            user = profile.user
+            user.is_active = new_status
             user.save(update_fields=['is_active'])
-            return {"message":"User Active Status Changed.",
-                    "current_status":user.is_active}
+            
+            current_val = user.is_active
+
+        elif role_name == 'admin':
+            profile = AdminProfile.objects.filter(id=user_id).first()
+            if not profile:
+                return {"error": "Admin not found."}
+            
+            profile.is_active = new_status
+            profile.save(update_fields=['is_active'])
+            
+            current_val = profile.is_active
+
         else:
-            return "User Not Found."
+            return {"error": "Invalid Role Name."}
+
+        return {
+            "message": f"{role_name.capitalize()} status updated.",
+            "current_status": current_val
+        }
+
     except Exception as e:
-        raise APIException(e)
-
-
+        raise APIException(str(e))

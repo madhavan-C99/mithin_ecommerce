@@ -119,7 +119,7 @@ def authorize_request(perm_name, user):
 
        
         perm = Perm.objects.filter(
-            roles__user=user,
+            roles__users=user,
             name=perm_name
         ).exists()
         print(perm)
@@ -133,3 +133,16 @@ def authorize_request(perm_name, user):
     except Exception as e:
         raise APIException(str(e))
 
+
+def all_users():
+    try:
+        customers=list(CustomerProfile.objects.all().values(
+            'id', 'user_id', 'name', 'email', 'user__is_active', 'user__mobile'
+        ))
+        admins=list(AdminProfile.objects.all().values(
+            'id', 'user_id', 'name', 'email', 'is_active', 'user__mobile'
+        ))
+        return {"customers":customers,
+                "admins":admins}
+    except Exception as e:
+        raise APIException(e)

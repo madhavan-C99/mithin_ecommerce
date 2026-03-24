@@ -96,39 +96,22 @@ def fetch_all_product_task():
 
     
 @task()
-def new_order_assign_admin():
+def notification_task():
     try:
 
-        new_order=exec_raw_sql('D_FETCH_NEW_ORDER_DATA',{})
-        print(new_order)
+        new_notification=exec_raw_sql('D_FETCH_ALL_NOTIFICATION',{})
+
         channel_layer = get_channel_layer()
         async_to_sync(channel_layer.group_send)(
-            "new_order_send_group", 
+            "notification_group", 
             {
-                "type": "send_new_order_data", 
-                "data": new_order
+                "type": "notification_send_data", 
+                "data": new_notification
             }
         )
         
     except Exception as e:
-        raise APIException(e)        
-    
-# @periodic_task(crontab(minute='*/60'))
-def stock_alert_product():
-    try:
-        stock_product=exec_raw_sql('D_FETCH_STOCK_ALERT_PRODUCT',{})
-        channel_layer = get_channel_layer()
-        async_to_sync(channel_layer.group_send)(
-            "stock_alter_product_group", 
-            {
-                "type": "send_stock_alert_data", 
-                "data": stock_product
-            }
-        )
-        
-    except Exception as e:
-        raise APIException(e)
-    
+        raise APIException(e)    
     
 @task()
 def stock_category_piechart():

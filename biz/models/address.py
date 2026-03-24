@@ -1,13 +1,15 @@
 from django.db import models
 from adm.models.customer_profile import CustomerProfile
+from adm.models.delete_base_model import SafeDeleteModel
 
-class Address(models.Model):
+class Address(SafeDeleteModel):
     user = models.ForeignKey(CustomerProfile, on_delete=models.CASCADE, related_name="users")
     name=models.CharField(max_length=100)
     mobile=models.CharField(max_length=15)
     category=models.CharField(max_length=50,default="home")
     address_line1 = models.CharField(max_length=255)
     address_line2 = models.CharField(max_length=255, null=True, blank=True)
+    landmark=models.CharField(max_length=100, null=True,blank=True)
     city = models.CharField(max_length=100)
     state = models.CharField(max_length=100, null=True, blank=True)
     country = models.CharField(max_length=100)

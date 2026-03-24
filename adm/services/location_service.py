@@ -20,7 +20,7 @@ def get_customer_distance(user_address):
         customer_lat = location['lat']
         customer_lng = location['lng']
 
-        store_lat, store_lng = 12.975942986925169, 80.22154128749642
+        store_lat, store_lng = 11.820579406912266, 79.78363609487317
 
         matrix = gmaps.distance_matrix(
             origins=[(customer_lat, customer_lng)],
@@ -36,9 +36,9 @@ def get_customer_distance(user_address):
             print(distance_in_meters)
 
             if distance_in_meters <= 3000:
-                eligible='Eligible'
+                eligible=True
             else:
-                eligible='Not Eligible'
+                eligible=False
 
             return {
                 "formatted_address": geocode_result[0]['formatted_address'],
@@ -70,17 +70,19 @@ def get_address_from_coords(**data):
         door_no = None
         street_no = None
         street_name = None
+        sub_area=None
+        main_area=None
         area = None
         city = None
         state = None
         pincode = None
 
-        for comp in components:
+        for comp in components: 
             types = comp['types']
 
             if 'street_number' in types or 'premise' in types:
                 door_no = comp['long_name']
-
+ 
             if 'route' in types:
                 street_name = comp['long_name']
 

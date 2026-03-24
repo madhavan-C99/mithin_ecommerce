@@ -1,6 +1,8 @@
 from django.db import models
+from .delete_base_model import SafeDeleteModel
 
-class Category(models.Model):
+
+class Category(SafeDeleteModel):
     name = models.CharField(max_length=100) 
     description = models.TextField(max_length=500, blank=True, null=True)
     category_image=models.CharField(max_length=500, null=True)
@@ -19,7 +21,7 @@ class Category(models.Model):
         db_table="adm_category"
         
         
-class SubCategory(models.Model):
+class SubCategory(SafeDeleteModel):
     name = models.CharField(max_length=100) 
     description = models.TextField(max_length=500, blank=True, null=True)
     category=models.ForeignKey(Category,on_delete=models.CASCADE, related_name='subcategory')

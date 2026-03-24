@@ -1,7 +1,9 @@
 from django.db import models
+from .delete_base_model import SafeDeleteModel
 
 
-class Perm(models.Model):
+
+class Perm(SafeDeleteModel):
     name = models.CharField(max_length=50)
     display_value = models.CharField(max_length=100)
     code = models.CharField(max_length=50, db_index=True, unique=True)

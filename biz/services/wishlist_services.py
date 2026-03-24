@@ -16,7 +16,7 @@ def add_and_remove_wishlist(**data):
         wishlist_item = Wishlist.objects.filter(user=customer, product_id=product_id).first()
 
         if wishlist_item:
-            wishlist_item.delete()
+            wishlist_item.save_delete(user_id=user_id)
             return "Product removed from wishlist."
         else:
             Wishlist.objects.create(
@@ -42,7 +42,7 @@ def delete_wishlist_item(**data):
         if not wishlist:
             return "wishlist item not found."
 
-        wishlist.delete()
+        wishlist.save_delete(user_id=user_id)
 
         return f"Wishlist Item id {wishlist_id} removed."
     except Exception as e:
