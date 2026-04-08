@@ -24,7 +24,7 @@ def trending_product():
                 "tamil_name":p["tamil_name"],
                 # "product_image":p["product_image"],
                 "product_img":(
-                    f"{settings.SITE_URL}{settings.MEDIA_URL}{p['product_img']}" if p["product_img"] else None
+f"{settings.CLOUD_FRONT_URL}{p['product_img'][6:]}" if p["product_img"] else None
                     ),
                 "price":p["price"],
                 "weight":p["weight"],
@@ -67,7 +67,7 @@ def fetch_all_product_task():
                 "description":p["description"],
                 # "product_image":p["product_image"],
                 "product_img":(
-                    f"{settings.SITE_URL}{settings.MEDIA_URL}{p['product_img']}" if p["product_img"] else None
+                   f"{settings.CLOUD_FRONT_URL}{p['product_img'][6:]}" if p["product_img"] else None
                     ),
                 "price":p["price"],
                 "weight":p["weight"],

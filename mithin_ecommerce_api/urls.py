@@ -16,9 +16,13 @@ Including another URLconf
 """
 from django.contrib import admin
 from django.urls import path,include
+from adm.views.transaction_views import *
 
 urlpatterns = [
     path('admin/', admin.site.urls),
     path('adm/',include('adm.urls')),
-    path('biz/',include('biz.urls'))
+    path('biz/',include('biz.urls')),
+    # payment webhook
+    path('api/payment/webhook/', RazorpayWebhookAPI.as_view(), name='razorpay-webhook'),
+
 ]

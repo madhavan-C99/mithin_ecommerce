@@ -91,8 +91,9 @@ def fetch_one_order(**data):
     except Exception as e:
         raise APIException(e)
     
+ 
     
-def order_status_update(user,**data):
+def order_status_update(**data):
     try:
         order=Order.objects.filter(id=data.get('id')).first()        
         order.status=data.get('order_status')
@@ -111,7 +112,7 @@ def read_notification(user,**data):
         notify=Notification.objects.filter(id=data.get('id')).first()
         notify.is_read=True
         notify.updated_at=datetime.now()
-        notify.updated_by=user.name
+        notify.updated_by=user
         notify.save()
         
         return(f"{notify.message} read by admin")

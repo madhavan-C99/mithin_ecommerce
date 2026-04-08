@@ -78,9 +78,18 @@ class ReadNotification(APIView):
 
     def post(self, request):
         authorize_request('api_perm_read_notification', request.user)
+        admin_profile = AdminProfile.objects.filter(user=request.user).first()
+        user_name = (
+            admin_profile.name
+            if admin_profile and admin_profile.name
+            else request.user.username
+        )
+
+        print("Logged User:", user_name)      
+        
         serializer = self.InputSerializers(data=request.data)
         serializer.is_valid(raise_exception=True)
-        data = read_notification(request.user,**serializer.validated_data)
+        data = read_notification(user_name,**serializer.validated_data)
         log_data = {
             'user_id': request.user.id if request.user.id else None,
             'api_name': request.path,

@@ -72,7 +72,6 @@ class TrendingProducts(AsyncWebsocketConsumer):
     def get_trending_products(self):
         product_list=exec_raw_sql('D_FETCH_ALL_TRENDING_PRODUCTS', {"status": True})
         product_data=[]
-        print(product_list)
         for p in product_list:
             product_data.append({
                 "product_id":p["id"],
@@ -80,7 +79,7 @@ class TrendingProducts(AsyncWebsocketConsumer):
                 "name":p["name"],
                 "tamil_name":p["tamil_name"],
                 "product_img":(
-                    f"{settings.SITE_URL}{settings.MEDIA_URL}{p['product_img']}" if p["product_img"] else None
+                    (f"{settings.CLOUD_FRONT_URL}{p['product_img'][6:]}" if p["product_img"] else None)
                     ),
                 "price":p["price"],
                 "weight":p["weight"],
@@ -145,7 +144,7 @@ class FetchAllProducts(AsyncWebsocketConsumer):
                 "tamil_name":p["tamil_name"],
                 "description":p["description"],
                 "product_img":(
-                    f"{settings.SITE_URL}{settings.MEDIA_URL}{p['product_img']}" if p["product_img"] else None
+                    (f"{settings.CLOUD_FRONT_URL}{p['product_img'][6:]}" if p["product_img"] else None)
                     ),
                 "price":p["price"],
                 "expiry_date":p["expiry_date"].isoformat(),
@@ -186,7 +185,12 @@ class NotificationData(AsyncWebsocketConsumer):
         notification_data = event['data']
         await self.send(text_data=json.dumps({
             'payload': notification_data
-        }))    
+        })) 
+
+    @sync_to_async
+    def stock_data(self):
+        order_data=exec_raw_sql('D_FETCH_ALL_NOTIFICATION',{})
+        return order_data   
         
 class StockCategoryChart(AsyncWebsocketConsumer):
     async def connect(self):

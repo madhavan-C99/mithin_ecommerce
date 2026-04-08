@@ -68,7 +68,7 @@ def fetch_wishlist(data):
                 "wishlist_id": item.id,
                 "product_id": item.product.id,
                 "product_name": item.product.name,
-                "image":   (f'{settings.SITE_URL}{settings.MEDIA_URL}{item.product.product_img}') if item.product.product_img else None,
+                "image":   (f"{settings.CLOUD_FRONT_URL}{item.product.product_img.name.replace('media/', '')}") if item.product.product_img else None,
                 "price": item.product.price,
                 "weight": item.product.weight
             })

@@ -17,7 +17,8 @@ def fetch_product_details(data):
             "description": product.description,
             "price": product.price,
             "weight": product.weight,
-            "image": (f'{settings.SITE_URL}{settings.MEDIA_URL}{product.product_img}') if product.product_img else None
+            "unit":product.unit,
+            "image": (f"{settings.CLOUD_FRONT_URL}{product.product_img.name.replace('media/', '')}") if product.product_img else None
         }
 
         # print(product_data)

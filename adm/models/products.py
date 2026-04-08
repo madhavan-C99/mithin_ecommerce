@@ -6,7 +6,7 @@ from .delete_base_model import SafeDeleteModel
 
 def product_image_path(instance, filename):
     ext = filename.split('.')[-1]
-    return f"product_snap/{uuid.uuid4()}.{ext}"
+    return f"media/product_snap/{uuid.uuid4()}.{ext}"
 
 
 class Product(SafeDeleteModel):

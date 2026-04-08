@@ -6,6 +6,7 @@ from ..services.products_service import *
 from ..services.user_service import *
 from ..models import *
 from ..tasks.api_log_task import api_history_log
+from rest_framework.decorators import authentication_classes, permission_classes
 
 
 class GetSelectOption(APIView):
@@ -48,9 +49,16 @@ class AddProduct(APIView):
 
     def post(self, request):
         authorize_request('api_perm_create_product', request.user)
+        admin_profile = AdminProfile.objects.filter(user=request.user).first()
+        user_name = (
+            admin_profile.name
+            if admin_profile and admin_profile.name
+            else request.user.username
+        )
+        # user_name = "arjun"
         serializer = self.InputSerializers(data=request.data)
         serializer.is_valid(raise_exception=True)
-        addproduct = add_product(request.user,**serializer.validated_data)
+        addproduct = add_product(user_name,**serializer.validated_data)
         log_data = {
             'user_id': request.user.id if request.user.id else None,
             'api_name': request.path,
@@ -62,10 +70,11 @@ class AddProduct(APIView):
         api_history_log(log_data)
         return Response({'data': addproduct}, status=status.HTTP_201_CREATED)
 
-
+@authentication_classes([])
+@permission_classes([]) 
 class FetchAllProduct(APIView):
     def get(self, request):
-        authorize_request('api_perm_fetch_all_product', request.user)
+        #authorize_request('api_perm_fetch_all_product', request.user)
         data = fetch_all_product()
         log_data = {
             'user_id': request.user.id if request.user.id else None,
@@ -120,9 +129,15 @@ class UpdateProduct(APIView):
 
     def post(self, request):
         authorize_request('api_perm_update_product', request.user)
+        admin_profile = AdminProfile.objects.filter(user=request.user).first()
+        user_name = (
+            admin_profile.name
+            if admin_profile and admin_profile.name
+            else request.user.username
+        )
         serializer = self.InputSerializers(data=request.data)
         serializer.is_valid(raise_exception=True)
-        updateproduct = update_product(request.user,**serializer.validated_data)
+        updateproduct = update_product(user_name,**serializer.validated_data)
         log_data = {
             'user_id': request.user.id if request.user.id else None,
             'api_name': request.path,
@@ -141,6 +156,12 @@ class DeleteProduct(APIView):
 
     def post(self, request):
         authorize_request('api_perm_delete_product', request.user)
+        # admin_profile = AdminProfile.objects.filter(user=request.user.id).first()
+        # user_name = (
+        #     admin_profile.name
+        #     if admin_profile and admin_profile.name
+        #     else request.user.username
+        # )
         serializer = self.InputSerializers(data=request.data)
         serializer.is_valid(raise_exception=True)
         data = delete_product(request.user,**serializer.validated_data)
@@ -161,13 +182,19 @@ class AddCategory(APIView):
         name = serializers.CharField(required=True)
         description = serializers.CharField(required=True)
         status = serializers.BooleanField(required=True)
-        category_image = serializers.ImageField(required=False)
+        category_img = serializers.ImageField(required=False)
 
     def post(self, request):
         authorize_request('api_perm_create_category', request.user)
+        admin_profile = AdminProfile.objects.filter(user=request.user).first()
+        user_name = (
+            admin_profile.name
+            if admin_profile and admin_profile.name
+            else request.user.username
+        )
         serializer = self.InputSerializers(data=request.data)
         serializer.is_valid(raise_exception=True)
-        addcategory = add_category(request.user,**serializer.validated_data)
+        addcategory = add_category(user_name,**serializer.validated_data)
         log_data = {
             'user_id': request.user.id if request.user.id else None,
             'api_name': request.path,
@@ -227,9 +254,15 @@ class UpdateCategory(APIView):
 
     def post(self, request):
         authorize_request('api_perm_update_category', request.user)
+        admin_profile = AdminProfile.objects.filter(user=request.user).first()
+        user_name = (
+            admin_profile.name
+            if admin_profile and admin_profile.name
+            else request.user.username
+        )
         serializer = self.InputSerializers(data=request.data)
         serializer.is_valid(raise_exception=True)
-        data = update_category(request.user,**serializer.validated_data)
+        data = update_category(user_name,**serializer.validated_data)
         log_data = {
             'user_id': request.user.id if request.user.id else None,
             'api_name': request.path,
@@ -248,6 +281,12 @@ class DeleteCategory(APIView):
 
     def post(self, request):
         authorize_request('api_perm_delete_category', request.user)
+        # admin_profile = AdminProfile.objects.filter(user=request.user).first()
+        # user_name = (
+        #     admin_profile.name
+        #     if admin_profile and admin_profile.name
+        #     else request.user.username
+        # )
         serializer = self.InputSerializers(data=request.data)
         serializer.is_valid(raise_exception=True)
         data = delete_category(request.user,**serializer.validated_data)
@@ -273,9 +312,15 @@ class AddSubCategory(APIView):
 
     def post(self, request):
         authorize_request('api_perm_create_subcategory', request.user)
+        admin_profile = AdminProfile.objects.filter(user=request.user).first()
+        user_name = (
+            admin_profile.name
+            if admin_profile and admin_profile.name
+            else request.user.username
+        )
         serializer = self.InputSerializers(data=request.data)
         serializer.is_valid(raise_exception=True)
-        addcategory = add_sub_category(request.user,**serializer.validated_data)
+        addcategory = add_sub_category(user_name,**serializer.validated_data)
         log_data = {
             'user_id': request.user.id if request.user.id else None,
             'api_name': request.path,
@@ -338,7 +383,13 @@ class UpdateSubCategory(APIView):
         authorize_request('api_perm_update_subcategory', request.user)
         serializer = self.InputSerializers(data=request.data)
         serializer.is_valid(raise_exception=True)
-        data = update_subcategory(request.user,**serializer.validated_data)
+        admin_profile = AdminProfile.objects.filter(user=request.user).first()
+        user_name = (
+            admin_profile.name
+            if admin_profile and admin_profile.name
+            else request.user.username
+        )
+        data = update_subcategory(user_name,**serializer.validated_data)
         log_data = {
             'user_id': request.user.id if request.user.id else None,
             'api_name': request.path,
@@ -357,6 +408,12 @@ class DeleteSubCategory(APIView):
 
     def post(self, request):
         authorize_request('api_perm_delete_subcategory', request.user)
+        admin_profile = AdminProfile.objects.filter(user=request.user).first()
+        user_name = (
+            admin_profile.name
+            if admin_profile and admin_profile.name
+            else request.user.username
+        )
         serializer = self.InputSerializers(data=request.data)
         serializer.is_valid(raise_exception=True)
         data = delete_subcategory(request.user,**serializer.validated_data)
@@ -370,3 +427,4 @@ class DeleteSubCategory(APIView):
         }
         api_history_log(log_data)
         return Response({'data': data}, status=status.HTTP_200_OK)
+    

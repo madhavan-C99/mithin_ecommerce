@@ -20,8 +20,6 @@ def get_select_options(**data):
 
 def add_product(user, **data):
     try:
-        print(data)
-
         existing_product = Product.objects.filter(name=data.get('name')).first()
         if existing_product:
             return {
@@ -42,8 +40,8 @@ def add_product(user, **data):
             category_id=data.get('category_id'),
             expiry_date=data.get('expiry_date'),
             product_img=data['product_img'],
-            created_by= user.name  ,       
-            updated_by= user.name           
+            created_by= user  ,       
+            updated_by= user           
         )
 
         trending_status = data.get('current_trending_status')
@@ -78,7 +76,7 @@ def fetch_all_product():
                 "name": p["name"],
                 "tamil_name": p["tamil_name"],
                 "description": p["description"],
-                "product_img": (f"{settings.SITE_URL}{settings.MEDIA_URL}{p['product_img']}" if p["product_img"] else None),
+                "product_img": (f"{settings.CLOUD_FRONT_URL}{p['product_img'][6:]}" if p["product_img"] else None),
                 "price": p["price"],
                 "weight": p["weight"],
                 "unit": p["unit"],
@@ -110,7 +108,8 @@ def fetch_one_product(**data):
                 "name": p["name"],
                 "tamil_name": p["tamil_name"],
                 "description": p["description"],
-                "product_img": (f"{settings.SITE_URL}{settings.MEDIA_URL}{p['product_img']}" if p["product_img"] else None),
+                "product_img": (f"{settings.CLOUD_FRONT_URL}{p['product_img'][6:]}" if p["product_img"] else None),
+    
                 "price": p["price"],
                 "weight": p["weight"],
                 "unit": p["unit"],
@@ -129,11 +128,10 @@ def fetch_one_product(**data):
 
 def update_product(user, **data):     
     try:
-        print(1)
         updt_product = Product.objects.filter(id=data.get('id')).first()
         price_changed=False
         stock_changed=False
-
+        
         if updt_product is None:
             return "Product Not Found"
 
@@ -182,7 +180,7 @@ def update_product(user, **data):
         if data.get("product_img"):
             updt_product.product_img = data.get("product_img")
 
-        updt_product.updated_by =  user.name       
+        updt_product.updated_by =  user      
         updt_product.save()
 
         if price_changed:
@@ -235,16 +233,20 @@ def update_product(user, **data):
 
 def delete_product(user, **data):     
     try:
+        # print(1)
         product = Product.objects.filter(id=data.get('id')).first()
         if not product:
             return "Product Not Found"
+        # print(2)
         name = product.name
-        product.save_delete(user_id=user.user_id)
-        
+        # print(3)
+        product.save_delete(user_id=user.id) 
+        # print(4)
+        # logger.info(5)
         fetch_all_product_task()
         return f"{name} Deleted Successfully"
     except Exception as e:
-        raise APIException(e)
+        raise APIException (str(e))
 
 
 def add_category(user, **data):       
@@ -253,9 +255,9 @@ def add_category(user, **data):
             name=data.get('name'),
             description=data.get('description'),
             is_active=data.get('status'),
-            category_img=data.get('category_image'),
-            created_by= user.name  ,           
-            updated_by= user.name               
+            category_img=data.get('category_img'),
+            created_by= user ,           
+            updated_by= user               
         )
         return f"{category.name} Category Added Successfully."
     except Exception as e:
@@ -273,7 +275,7 @@ def fetch_all_category():
                 "name": c['name'],
                 "description": c['description'],
                 "status": c['is_active'],
-                "category_img": (f"{settings.SITE_URL}{settings.MEDIA_URL}{c['category_img']}" if c["category_img"] else None),
+                "category_img": (f"{settings.CLOUD_FRONT_URL}{c['category_img'][6:]}" if c["category_img"] else None),
             })
         return category
     except Exception as e:
@@ -292,7 +294,7 @@ def fetch_one_category(**data):
                 "name": c['name'],
                 "description": c['description'],
                 "status": c['is_active'],
-                "category_img": (f"{settings.SITE_URL}{settings.MEDIA_URL}{c['category_img']}" if c["category_img"] else None),
+                "category_img": (f"{settings.CLOUD_FRONT_URL}{c['category_img'][6:]}" if c["category_img"] else None),
             })
         return category
     except Exception as e:
@@ -308,7 +310,7 @@ def update_category(user, **data):
             categorys.description = data.get('description')
             categorys.is_active = data.get("status")
             categorys.updated_at = timezone.now()
-            categorys.updated_by =  user.name       
+            categorys.updated_by =  user       
             if data.get("category_img"):
                 categorys.category_img = data.get("category_img")
             categorys.save()
@@ -324,7 +326,7 @@ def delete_category(user, **data):
         if not category:
             return "Category Not Found"
         name = category.name
-        category.save_delete(user_id=user.user_id)
+        category.save_delete(user_id=user.id)
         return f"{name} Deleted Successfully"
     except Exception as e:
         raise APIException(e)
@@ -337,8 +339,8 @@ def add_sub_category(user, **data):
             category_id=data.get('category_id'),
             description=data.get('description'),
             is_active=data.get('status'),
-            created_by= user.name  ,           
-            updated_by= user.name              
+            created_by= user  ,           
+            updated_by= user              
         )
         return f"{category.name} subCategory Added Successfully."
     except Exception as e:
@@ -384,7 +386,7 @@ def update_subcategory(user, **data):
             categorys.description = data.get('description')
             categorys.is_active = data.get("status")
             categorys.updated_at = timezone.now()
-            categorys.updated_by = user.name   
+            categorys.updated_by = user
             categorys.save()
 
         return f"{categorys.name} category Updated Successfully"
@@ -398,7 +400,7 @@ def delete_subcategory(user, **data):
         if not category:
             return "SubCategory Not Found"
         name = category.name
-        category.save_delete(user_id=user.user_id)
+        category.save_delete(user_id=user.id)
         return f"{name} Deleted Successfully"
     except Exception as e:
-        raise APIException(e)
+        raise APIException (str(e))

@@ -33,7 +33,7 @@ def get_customer_distance(user_address):
         
         if element.get('status') == 'OK':
             distance_in_meters=element['distance']['value']
-            print(distance_in_meters)
+            # print(distance_in_meters)
 
             if distance_in_meters <= 3000:
                 eligible=True

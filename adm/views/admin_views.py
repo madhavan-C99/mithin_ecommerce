@@ -8,8 +8,8 @@ from ..tasks.api_log_task import api_history_log
 from ..services.user_service import authorize_request
 
 
-# @authentication_classes([])
-# @permission_classes([])
+@authentication_classes([])
+@permission_classes([])
 class CreateAdminProfile(APIView):
     class InputSerializers(serializers.Serializer):
         name=serializers.CharField(required=True)
@@ -18,7 +18,7 @@ class CreateAdminProfile(APIView):
         password=serializers.CharField(required=True)
         confirm_password=serializers.CharField(required=True)
     def post(self,request):
-        authorize_request("api_perm_create_new_admin_user",request.user)
+        # authorize_request("api_perm_create_new_admin_user",request.user)
         serializer=self.InputSerializers(data=request.data)
         serializer.is_valid(raise_exception=True)
         createuser=create_admin_user(**serializer.validated_data)
@@ -45,16 +45,6 @@ class EmailVerification(APIView):
         validate=validate_email(**serializer.validated_data)
         response_body = validate 
 
-        # 2. SESSION STORAGE
-        # Dictionary keys-ah access panna get() use pannunga
-        user_info = response_body.get('user', {})
-        u_id = user_info.get('user_id')
-
-        if u_id:
-            request.session['user_id'] = u_id
-            request.session.modified = True
-            request.session.save()
-            print(f"DEBUG: Session saved for ID {u_id}")
         log_data = {
             'user_id': None, 
             'api_name': request.path,

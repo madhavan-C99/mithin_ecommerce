@@ -19,48 +19,35 @@ from ..tasks.mailtask import *
 def create_token(**data):
     mobile_number=data.get('mobile_number')
     email=data.get('email')
-
-    # expired = User.objects.filter(Q(username=mobile_number) | Q(mobile=mobile_number), is_active=False).exists()
-    # if expired:
-    #     raise AuthenticationFailed(detail='Your plan has expired. Please renew your plan.')
-
-    # if mobile_number:
-        # user = User.objects.filter(mobile=mobile_number).first()
     user = User.objects.filter(email=email).first()
 
     customer=CustomerProfile.objects.filter(user=user).first()
     admin=AdminProfile.objects.filter(user=user).first()
 
-    if customer:
-        name = customer.name
-        role = "customer"
+    roles=[]
 
-    elif admin:
-        name = admin.name
-        role = "admin"
-
+    if admin:
+        roles.append("admin")
+        if hasattr(admin, 'name') and admin.name:
+            name = admin.name
+    
+    elif customer:
+        roles.append("customer")
+        if hasattr(customer, 'name') and customer.name:
+            name = customer.name
     else:
-        name = "Guest User"
-        role = "unknown"
-    # print(user.id)
-    # elif email:
-    #     adm_user=AdminProfile.objects.filter(email=email).select_related('user').first()
-    #     if adm_user:
-    #         user=adm_user.user
+        name = "Guest"
+
+    if not roles:
+        role = "Guest User"
+    else:
+        role = roles
+
     if not user:
         raise AuthenticationFailed(detail='User Not Found')
     
     if not user.is_active:
         raise AuthenticationFailed(detail='Your account has been blocked. Please contact support for assistance.')
-
-    # user = authenticate(username=use_obj.username, password=data.get('password'))
-    # if not user:
-    #     raise AuthenticationFailed(detail='Invalid Username or Password')
-
-    # today = datetime.datetime.now().date()
-
-    # if user.ending_date and user.ending_date < today:
-    #     raise AuthenticationFailed(detail='Your plan has expired. Please renew your plan.')
 
     user.last_login = datetime.datetime.now()
     user.save(update_fields=["last_login"])
@@ -71,8 +58,9 @@ def create_token(**data):
     user_data = {
         "user_id": user.id,
         "name":name,
-        "mobile": user.mobile,
-        "email": user.email
+        "mobile": getattr(user, 'mobile', None),
+        "email": user.email,
+        "roles":role
     }
 
     return str(access_tkn), user_data

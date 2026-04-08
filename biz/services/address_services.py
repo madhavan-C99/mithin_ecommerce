@@ -22,6 +22,9 @@ def fetch_all_address(data):
     try:
         user=CustomerProfile.objects.filter(user_id=data.get('user_id')).first()
 
+        if not user:
+            return "User not found"
+
         address=Address.objects.filter(user=user)
 
         final_data=[]
@@ -98,6 +101,9 @@ def delete_address(**data):
 
         user_id = data.get('user_id')
         user=CustomerProfile.objects.filter(user_id=user_id).first()
+
+        if not user:
+            return "User Not Found"
         was_default = address_to_delete.is_default
 
         address_to_delete.save_delete(user_id=user_id)
@@ -134,6 +140,9 @@ def fetch_default_address(data):
     try:
         user_id=data.get('user_id')
         user=CustomerProfile.objects.filter(user_id=user_id).first()
+
+        if not user:
+            return "User Not Found"
         address=Address.objects.filter(user=user,is_default=True).first()
         result={
                 "id":address.id,
@@ -151,5 +160,3 @@ def fetch_default_address(data):
         return result
     except Exception as e:
         raise APIException(e)
-
-

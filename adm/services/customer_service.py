@@ -170,7 +170,6 @@ def change_customer_status(data):
         user_id = data.get('user_id')
         role_name = data.get('role')
         new_status = data.get('status')
-
         if role_name == 'customer':
             profile = CustomerProfile.objects.filter(id=user_id).first()
             if not profile:

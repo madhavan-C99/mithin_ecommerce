@@ -1,3 +1,5 @@
+
+
 import json
 from asgiref.sync import sync_to_async
 from asgiref.sync import async_to_sync
@@ -19,20 +21,20 @@ from django.db.models import Q
 logger=logging.getLogger("task")
 
 @task()
-def get_filtered_products_task(cat_id, sub_cat_id=None):
+def get_filtered_products_task(cat_id,group_name, sub_cat_id=None):
     close_old_connections()
-    queryset = Product.objects.filter(product_img__isnull=False).exclude(product_img='')
+    queryset = Product.objects.filter(is_active=True)
     
     if sub_cat_id:
         queryset = queryset.filter(subcategory_id=sub_cat_id)
     elif cat_id:
-        queryset = queryset.filter(subcategory__category_id=cat_id)
+        queryset = queryset.filter(category_id=cat_id)
 
     products= [serialize_product_helper(p) for p in queryset]
 
     channel_layer = get_channel_layer()
     async_to_sync(channel_layer.group_send)(
-        "stock_updates", 
+        group_name, 
         {
             "type": "broadcast_message",
             "message_data": {
@@ -51,8 +53,9 @@ def serialize_product_helper(p):
         "stock": p.stock,
         "unit":p.unit,
         "status": "Out of Stock" if p.stock <= 0 else "Available",
+        "is_active":p.is_active,
         "subcategory_id":p.subcategory_id,
-        "image": f"{settings.SITE_URL}{settings.MEDIA_URL}{p.product_img}" if p.product_img else None
+       "image": f"{settings.CLOUD_FRONT_URL}{p.product_img.name.replace('media/', '')}" if p.product_img else None
     }
 
 @task()
@@ -107,7 +110,7 @@ def fetch_user_active_orders_task(user_id):
     orders = Order.objects.filter(user_id=user.id).filter(Q(status__in=active_statuses) | Q(status='Delivered', updated_at__gte=cutoff_time)).order_by('-id')
     all_orders=[]
     for order in orders:
-        address_obj = order.address 
+        address_obj = order.address  
         address_data = {
             "name": address_obj.name if address_obj else "N/A",
             "mobile": address_obj.mobile if address_obj else "N/A",
@@ -125,10 +128,10 @@ def fetch_user_active_orders_task(user_id):
         for item in order_items:
             item_list.append({
                 "name": item.product.name,
-                "image":f"{settings.SITE_URL}{settings.MEDIA_URL}{item.product.product_img}" if item.product.product_img else None,
+               "image":f"{settings.CLOUD_FRONT_URL}{item.product.product_img.name.replace('media/', '')}" if item.product.product_img else None,
                 "weight":item.weight,
                 "qty": int(item.quantity),
-                "price": str(item.unit_price)
+                "price": str(item.total_price)
             })
 
         all_orders.append({
@@ -164,5 +167,3 @@ def order_update_task(order_id):
         logger.error("order doesn't found")
     except Exception as e:
         logger.exception(e)
-
-

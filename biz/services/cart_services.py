@@ -1,3 +1,5 @@
+
+
 from ..models.cart import *
 from ..models.cart_items import *
 from adm.models.customer_profile import CustomerProfile
@@ -8,23 +10,32 @@ from decimal import Decimal
 from django.conf import settings
 import requests
 from decimal import Decimal
+import logging
+
+logger = logging.getLogger(__name__)
 
 
 def add_to_cart(**data): 
     try:
         user_id = data.get('user_id')
         product_id = data.get('product_id')
+        weight=data.get('weight')
         qty = int(data.get('quantity', 1))
+        total_weight=weight * qty
 
         user=CustomerProfile.objects.filter(user__id=user_id).first()
 
+        if not user:
+            return "User Not Found."
+
         product = Product.objects.get(id=product_id)
+
         
         if product.stock <= 0:
             return "Sorry, Product is Out of Stock."
         
-        if product.stock < qty:
-            return f"Only {product.stock} items left in stock."
+        if product.stock < total_weight:
+            return f"Insufficient stock. Only {product.stock}kg available."
 
         cart_data, created = Cart.objects.get_or_create(
             user_id=user.id, 
@@ -33,13 +44,13 @@ def add_to_cart(**data):
         )
 
         # Item already irukka nu check panroam
-        existing_item = CartItems.objects.filter(cart=cart_data, product_id=product_id).exists()
+        existing_item = CartItems.objects.filter(cart=cart_data, product_id=product_id,weight=data.get('weight')).exists()
 
         if existing_item:
             return "Item already in cart."
         
         
-        # Pudusa create panroam
+        # create new one
         new_item=CartItems.objects.create(
             cart=cart_data,
             product_id=product_id,
@@ -64,6 +75,9 @@ def fetch_cart_items(data):
     try:
         user_id=data.get('user_id')
         user=CustomerProfile.objects.filter(user_id=user_id).first()
+
+        if not user:
+            return "User Not Found."
         products=Cart.objects.filter(user_id=user.id, is_ordered=False).first()
 
         if not products:
@@ -76,7 +90,7 @@ def fetch_cart_items(data):
                 "cart_item_id": item.id,
                 "product_id": item.product.id,
                 "product_name": item.product.name,
-                "image": (f'{settings.SITE_URL}{settings.MEDIA_URL}{item.product.product_img}') if item.product.product_img else None,
+                "image": (f"{settings.CLOUD_FRONT_URL}{item.product.product_img.name.replace('media/', '')}") if item.product.product_img else None,
                 "weight": item.weight,
                 "quantity": item.quantity,
                 "unit_price": item.unit_price,
@@ -95,23 +109,40 @@ def fetch_cart_items(data):
 def update_cart_item(**data):
     try:
         user_id = data.get('user_id')
+        cart_item_id=data.get('cart_item_id')
         product_id = data.get('product_id')
         new_quantity=int(data.get('quantity'))
         new_total_price=data.get('total_price')
 
         with transaction.atomic():
             user=CustomerProfile.objects.filter(user_id=user_id).first()
+
+            if not user:
+                return "User Not Found"
             cart = Cart.objects.filter(user_id=user.id, is_ordered=False).first()
             if not cart: 
                 return "Cart not found"
 
-            cart_item = CartItems.objects.filter(cart=cart, product_id=product_id).first()
+            cart_item = CartItems.objects.filter(cart=cart,id=cart_item_id).first()
+
             if not cart_item: 
                 return "Product not found"
             
+            product = cart_item.product 
+
+            new_total_quantity=cart_item.weight * new_quantity
+
+            if new_quantity > 0:
+                if product.stock < new_total_quantity:
+                    return f"Sorry, only {product.stock}kg available in stock."
+             
             if new_quantity <= 0:
                 cart_item.save_delete(user_id=user_id)
                 message = f"Product {product_id} removed from cart."
+                remaining = CartItems.objects.filter(cart=cart)
+                if not remaining.exists():
+                    cart.save_delete(user_id=user_id) 
+                    return message
             
             else:           
                 cart_item.quantity=new_quantity
@@ -129,16 +160,17 @@ def update_cart_item(**data):
     except Exception as e:
         raise APIException(str(e))
 
-
-
 def delete_cart_item(**data):
     try:
         cart_item_id = data.get('cart_item_id')
         user_id=data.get('user_id')
 
         user=CustomerProfile.objects.filter(user_id=user_id).first()
+
+        if not user:
+            return "User Not Found."
         
-        cart_item = CartItems.objects.filter(id=cart_item_id, cart__user=user.id).first()
+        cart_item = CartItems.objects.filter(id=cart_item_id, cart__user_id=user.id).first()
         
         if not cart_item:
             return "Item not found in your cart"
@@ -165,6 +197,9 @@ def clear_user_cart(**data):
         user_id = data.get('user_id')
 
         user=CustomerProfile.objects.filter(user_id=user_id).first()
+
+        if not user:
+            return "User Not Found"
         
         cart = Cart.objects.filter(user_id=user.id, is_ordered=False).first()
         
@@ -181,4 +216,4 @@ def clear_user_cart(**data):
         
     except Exception as e:
         raise APIException(str(e))
-    
+

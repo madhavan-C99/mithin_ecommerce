@@ -5,6 +5,7 @@ from rest_framework.exceptions import APIException
 from django.contrib.auth.hashers import check_password
 from django.db import connection
 from django.db.models import Q
+from django.db.models import F
 
 from ..models import *
 # from ..services.collection_query_service import exec_raw_sql
@@ -136,13 +137,26 @@ def authorize_request(perm_name, user):
 
 def all_users():
     try:
-        customers=list(CustomerProfile.objects.all().values(
-            'id', 'user_id', 'name', 'email', 'user__is_active', 'user__mobile'
+        customers=list(CustomerProfile.objects.annotate(user_status=F('user__is_active')).values(
+            'id', 'user_id', 'name', 'email', 'user_status', 'user__mobile'
         ))
-        admins=list(AdminProfile.objects.all().values(
-            'id', 'user_id', 'name', 'email', 'is_active', 'user__mobile'
+        admins=list(AdminProfile.objects.annotate(user_status=F('is_active')).values(
+            'id', 'user_id', 'name', 'email', 'user_status', 'user__mobile'
         ))
-        return {"customers":customers,
-                "admins":admins}
+
+        overall_data=[]
+
+        for c in customers:
+            c['role'] = 'customer'
+            overall_data.append(c)
+
+        for a in admins:
+            a['role'] = 'admin'
+            overall_data.append(a)
+
+        for index, user in enumerate(overall_data, start=1):
+            user['s_no'] = index
+        
+        return {'users':overall_data}
     except Exception as e:
         raise APIException(e)

@@ -60,6 +60,7 @@ class FetchCartItems(APIView):
 class UpdateCartQuantity(APIView):
     class InputSerializers(serializers.Serializer):
         user_id = serializers.IntegerField(required=True)
+        cart_item_id=serializers.IntegerField(required=True)
         product_id = serializers.IntegerField(required=True)
         quantity=serializers.IntegerField(required=True)
         total_price=serializers.DecimalField(required=True,max_digits=10,decimal_places=2)

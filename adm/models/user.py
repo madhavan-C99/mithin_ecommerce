@@ -94,8 +94,8 @@ class User(AbstractBaseUser, PermissionsMixin):
     # objects of this type.
     objects = UserManager()
 
-    def __str__(self):
-        return self.mobile
+    # def __str__(self):
+    #     return self.mobile
 
     # def get_full_name(self):
     #     if self.first_name is None and self.last_name is None:

@@ -12,12 +12,14 @@ from .views.location_views import *
 from .views import CreateToken
 from .views.dashborad_views import *
 from .views.order_management_views import *
+from .views.transaction_views import *
 
 urlpatterns = [
     path('create_token',CreateToken.as_view()),
-    path('create_user',CreateUser.as_view()),
+    # path('create_user',CreateUser.as_view()),
     path('create_role',CreateRole.as_view()),
     path('create_perm',CreatePerm.as_view()),
+    path('add_perm_role',AddPermissionRole.as_view()),
     path('fetch_all_customer_data',FetchAllCustomerData.as_view()), # for fetch all customers to admin
     path('fetch_all_users',FetchallUsers.as_view()), # Fetch all customers and admins
     path('admin_email_verification',EmailVerification.as_view()), # for login authentication for admin users
@@ -34,8 +36,6 @@ urlpatterns = [
     path('fetch_one_customer_data',FetchOneCustomerProfile.as_view()), # fetch a single customer profile data
     path('find_customer_distance',FindCustomerDistance.as_view()), #Find the customers distance from store
     path('get_address',GetAddress.as_view()), # Get address from lat and long
-
-
 
     #admin crud
 
@@ -57,7 +57,6 @@ urlpatterns = [
     
     path('get_select_options',GetSelectOption.as_view()),        #dropdown select option in query key 
 
-    # path('add_details',AddDetails.as_view())
     path('top_revenue_report',TopCardsReport.as_view()),
     path('top_sales_product',TopSalesProduct.as_view()),
     path('piechart_subcategory',PiechartSubategory.as_view()),
@@ -68,19 +67,8 @@ urlpatterns = [
     path('fetch_one_order',FetchOneOrderDetails.as_view()),
     path('order_status_update',OrderStatusUpdate.as_view()),
 
-    path('read_notification',ReadNotification.as_view())
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+    path('read_notification',ReadNotification.as_view()),
+    path('create_order_payment',CreateOrderPayment.as_view()),
+    path('order_payment_verify',OrderPaymentVerify.as_view()),
+   
 ]

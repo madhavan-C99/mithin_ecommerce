@@ -49,7 +49,7 @@ class UpdateAddress(APIView):
         category=serializers.CharField(required=False)
         address_line1 = serializers.CharField(required=False)
         address_line2 = serializers.CharField(required=False)
-        landmark=serializers.CharField(required=False)
+        landmark=serializers.CharField(required=False,allow_blank=True,allow_null=True)
         city = serializers.CharField(required=False)
         state = serializers.CharField(required=False)
         country = serializers.CharField(required=False)

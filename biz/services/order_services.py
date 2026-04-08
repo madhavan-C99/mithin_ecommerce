@@ -15,7 +15,10 @@ from django.conf import settings
 def fetch_purchase_history(data):
     try:
         user=CustomerProfile.objects.filter(user_id=data.get('user_id')).first()
-        orders = Order.objects.filter(user=user).order_by('-created_at')
+
+        if not user:
+            return "User Not Found"
+        orders = Order.objects.filter(user=user).exclude(status = 'Initiated').order_by('-created_at')
 
         if not orders.exists():
             return {"message": "No purchase history found"}
@@ -42,7 +45,8 @@ def fetch_purchase_history(data):
             for item in items:
                 item_list.append({
                     "product_name": item.product.name,
-                    "image":  (f'{settings.SITE_URL}{settings.MEDIA_URL}{item.product.product_img}') if item.product.product_img else None,
+
+                    "image": (f"{settings.CLOUD_FRONT_URL}{item.product.product_img.name.replace('media/', '')}") if item.product.product_img else None,
                     "quantity": item.quantity,
                     "weight": item.weight,
                     "unit_price": item.unit_price,
@@ -73,6 +77,9 @@ def create_order(**data):
             user_id=data.get('user_id')
             user=CustomerProfile.objects.filter(user_id=user_id).first()
 
+            if not user:
+                return "User not found"
+
             #  User-oda Cart-ah fetch pandrom
             cart = Cart.objects.filter(user_id=user.id).first()
 
@@ -84,7 +91,7 @@ def create_order(**data):
             #product stock check
             for item in cart_items:
                 if item.product.stock < item.quantity:
-                    return f"{item.product.name} is out of stock."
+                    raise APIException (f"{item.product.name} is out of stock.")
 
             #  Address check
             check_address=Address.objects.filter(id=data.get('address_id'),user=user).exists()
@@ -112,7 +119,7 @@ def create_order(**data):
                 address_id=data.get('address_id'),
                 total_amount=actual_total,
                 order_number=f"sm{new_num}",
-                status="Pending"
+                status="Initiated"
             )
 
             #  Cart Items-ah Order Items-ku move pandrom & Stock update pandrom
@@ -126,39 +133,39 @@ def create_order(**data):
                     total_price=item.total_price
                 )
 
-                # Stock minus pandrom
-                product = item.product
-                product.stock -= item.quantity
-                product.save()
+                # # Stock minus pandrom
+                # product = item.product
+                # product.stock -= item.quantity
+                # product.save()
 
-                if product.stock < 10:
-                    notificate=Notification.objects.create(
-                            title="Low Stock",
-                            message=f"{product.name} is low stock ",
-                            product=product,
-                            created_by="system"
+                # if product.stock < 10:
+                #     notificate=Notification.objects.create(
+                #             title="Low Stock",
+                #             message=f"{product.name} is low stock ",
+                #             product=product,
+                #             created_by="system"
                             
-                        )
+                #         )
 
-                # Product stock updation task
-                transaction.on_commit(lambda p_id=product.id, p_stock=product.stock:send_stock_update_task(p_id, p_stock))
+                # # Product stock updation task
+                # transaction.on_commit(lambda p_id=product.id, p_stock=product.stock:send_stock_update_task(p_id, p_stock))
 
             #  Cart-ah empty pandrom
-            cart.save_delete(user_id=user_id)
+            # cart.save_delete(user_id=user_id)
             final_order_id=order.id
 
-        if final_order_id:
-            #product status tracking task
-            order_update_task(final_order_id) 
-            notificate=Notification.objects.create(
-                            title="New Order",
-                            message=f"Order # {order.order_number} placed by {order.user.name}",
-                            order_id=order.id,
-                            created_by="system",
-                        )
-            print('start task')
-            notification_task()
-            print('end task')
+        # if final_order_id:
+        #     #product status tracking task
+        #     order_update_task(final_order_id) 
+        #     notificate=Notification.objects.create(
+        #                     title="New Order",
+        #                     message=f"Order # {order.order_number} placed by {order.user.name}",
+        #                     order_id=order.id,
+        #                     created_by="system",
+        #                 )
+        #     print('start task')
+        #     notification_task()
+        #     print('end task')
 
             return {"order_id": order.id, 
                     "order_number":order.order_number}
@@ -171,7 +178,13 @@ def cancel_order(data):
     try:
         with transaction.atomic():
             order_rec=Order.objects.filter(id=data.get('order_id')).first()
+
+            if not order_rec:
+                return "Order Record not found on you Orders."
             items = OrderItems.objects.filter(order=order_rec)
+
+            if not items:
+                return "Your Order items not found."
             for item in items:
                 product = item.product
                 # product.weight =Decimal(str(product.weight))+Decimal(item.weight)
@@ -194,6 +207,9 @@ def fetch_order_summary(data):
     try:
         user_id=data.get('user_id')
         user=CustomerProfile.objects.filter(user_id=user_id).first()
+
+        if not user:
+            return "User not found"
         cart=Cart.objects.filter(user_id=user.id).first()
 
         if not cart:
@@ -223,5 +239,3 @@ def change_status(**data):
         return f"Your order status Changed for {data.get('status')} state."
     except Exception as e:
         raise APIException(e)
-
-    

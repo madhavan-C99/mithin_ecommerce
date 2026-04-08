@@ -1,19 +1,27 @@
-
 import json
 import logging
 from channels.generic.websocket import AsyncWebsocketConsumer
 from .tasks.tasks import *
+import uuid
 
 logger = logging.getLogger('django')
 
 class ProductConsumer(AsyncWebsocketConsumer):
     async def connect(self):
-        self.group_name = "stock_updates"
+        user = self.scope.get('user')
+        if user and user.is_authenticated:
+            self.user_id = str(user.id)
+        else:
+            self.user_id = f"anon_{uuid.uuid4().hex[:8]}"
+        self.group_name = f"user_{self.user_id}_updates"
+        self.common_group = "stock_updates"
         await self.channel_layer.group_add(self.group_name, self.channel_name)
+        await self.channel_layer.group_add(self.common_group, self.channel_name)
         await self.accept()
 
     async def disconnect(self, close_code):
         await self.channel_layer.group_discard(self.group_name, self.channel_name)
+        await self.channel_layer.group_discard(self.common_group, self.channel_name)
 
     async def receive(self, text_data):
         try:
@@ -22,7 +30,7 @@ class ProductConsumer(AsyncWebsocketConsumer):
             sub_cat_id = data.get('sub_category_id')
 
             if cat_id or sub_cat_id:    
-                get_filtered_products_task(cat_id, sub_cat_id)
+                get_filtered_products_task(cat_id,self.group_name, sub_cat_id)
         except Exception as e:
             logger.error(f"WebSocket Receive Error: {str(e)}")
 

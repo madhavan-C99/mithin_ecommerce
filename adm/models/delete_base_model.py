@@ -1,6 +1,7 @@
 from django.db import models
 from django.apps import apps
 from django.forms.models import model_to_dict
+from datetime import date, datetime   # ✅ add this import
 
 class SafeDeleteModel(models.Model):
     class Meta:
@@ -9,11 +10,38 @@ class SafeDeleteModel(models.Model):
     def delete(self):
         return None
 
+    # def save_delete(self, user_id=None):
+    #     LogModel = apps.get_model('adm', 'DeletedDataLog')
+        
+    #     obj_data = model_to_dict(self)
+        
+    #     LogModel.objects.create(
+    #         table_name=self._meta.db_table,
+    #         row_id=self.id,
+    #         data=obj_data,
+    #         deleted_by_id=user_id
+    #     )
+
+    #     return super(SafeDeleteModel, self).delete()
+
+    
+
     def save_delete(self, user_id=None):
         LogModel = apps.get_model('adm', 'DeletedDataLog')
         
         obj_data = model_to_dict(self)
-        
+
+        # 👇 existing loop (DO NOT CHANGE structure)
+        for field in self._meta.fields:
+            value = getattr(self, field.name)
+            
+            if isinstance(value, models.fields.files.FieldFile):
+                obj_data[field.name] = value.url if value else None
+
+            # ✅ JUST ADD THIS BLOCK (nothing else change)
+            elif isinstance(value, (date, datetime)):
+                obj_data[field.name] = value.isoformat()
+
         LogModel.objects.create(
             table_name=self._meta.db_table,
             row_id=self.id,
@@ -22,3 +50,27 @@ class SafeDeleteModel(models.Model):
         )
 
         return super(SafeDeleteModel, self).delete()
+
+
+    #old code
+    
+    # def save_delete(self, user_id=None):
+    #     LogModel = apps.get_model('adm', 'DeletedDataLog')
+        
+    #     obj_data = model_to_dict(self)
+
+    #     # 👇 FIX: convert ImageField
+    #     for field in self._meta.fields:
+    #         value = getattr(self, field.name)
+            
+    #         if isinstance(value, models.fields.files.FieldFile):
+    #             obj_data[field.name] = value.url if value else None
+
+    #     LogModel.objects.create(
+    #         table_name=self._meta.db_table,
+    #         row_id=self.id,
+    #         data=obj_data,
+    #         deleted_by_id=user_id
+    #     )
+
+    #     return super(SafeDeleteModel, self).delete()
